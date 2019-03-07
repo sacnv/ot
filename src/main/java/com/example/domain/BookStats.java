@@ -1,5 +1,6 @@
 package com.example.domain;
 
+import java.math.BigDecimal;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 
@@ -13,11 +14,11 @@ public class BookStats {
 	
 	private Map<Boolean, LongSummaryStatistics> orderStatsByValidity;
 	
-	private Map<Long,Long> limitTable;
+	private Map<BigDecimal,Long> limitTable;
 	
 	private LongSummaryStatistics execStats;
 	
-	private Long execPrice = 0L;
+	private BigDecimal execPrice = BigDecimal.ZERO;
 
 	public LongSummaryStatistics getOrderStats() {
 		return orderStats;
@@ -51,11 +52,11 @@ public class BookStats {
 		this.orderStatsByValidity = orderStatsByValidity;
 	}
 
-	public Map<Long, Long> getLimitTable() {
+	public Map<BigDecimal, Long> getLimitTable() {
 		return limitTable;
 	}
 
-	public void setLimitTable(Map<Long, Long> limitTable) {
+	public void setLimitTable(Map<BigDecimal, Long> limitTable) {
 		this.limitTable = limitTable;
 	}
 
@@ -67,11 +68,11 @@ public class BookStats {
 		this.execStats = execStats;
 	}
 
-	public Long getExecPrice() {
+	public BigDecimal getExecPrice() {
 		return execPrice;
 	}
 
-	public void setExecPrice(Long execPrice) {
+	public void setExecPrice(BigDecimal execPrice) {
 		this.execPrice = execPrice;
 	}
 	

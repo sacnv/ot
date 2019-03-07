@@ -2,7 +2,7 @@ package com.example.domain;
 
 public enum OrderStatus {
 	
-	OPEN("open"), CLOSED("closed");
+	OPEN("open"), CLOSED("closed"), EXECUTED("executed");
 	
 	private String status;
 	

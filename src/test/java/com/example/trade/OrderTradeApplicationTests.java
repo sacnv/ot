@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.example.controller.OrderController;
+import com.example.controller.OrderBookController;
 import com.example.domain.Order;
 
 @RunWith(SpringRunner.class)
@@ -23,7 +23,7 @@ import com.example.domain.Order;
 public class OrderTradeApplicationTests {
 
 	@Autowired
-    private OrderController controller;
+    private OrderBookController controller;
 	
 	@Autowired
 	private TestRestTemplate restTemplate;

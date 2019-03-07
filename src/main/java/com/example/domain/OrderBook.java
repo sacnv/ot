@@ -3,10 +3,11 @@ package com.example.domain;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.example.util.IDGenerator;
+
 public class OrderBook {
 	
-	//For simplicity this id will be equal to instruction id
-	private long id;
+	private Long id;
 	
 	private List<Order> orderList = new CopyOnWriteArrayList<Order>();
 	
@@ -14,22 +15,20 @@ public class OrderBook {
 	
 	private OrderStatus status;
 	
-	private long instrId;
+	private Long instrId;
 	
-	public OrderBook(long bookId) {
+	public OrderBook(Long bookId) {
 		super();
-		this.id = bookId;
+		this.id = IDGenerator.generateId(OrderBook.class);
 		this.instrId = bookId;
 	}
 	
-	public OrderBook(OrderStatus status, long instrId) {
+	public OrderBook(OrderStatus status, Long instrId) {
 		super();
 		this.status = status;
-		this.id = instrId;
+		this.id = IDGenerator.generateId(OrderBook.class);
 		this.instrId = instrId;
 	}
-
-
 
 	public List<Order> getOrderList() {
 		return orderList;
@@ -55,22 +54,18 @@ public class OrderBook {
 		this.status = status;
 	}
 
-	public long getInstrId() {
+	public Long getInstrId() {
 		return instrId;
 	}
 
-	public void setInstrId(long instrId) {
+	public void setInstrId(Long instrId) {
 		this.instrId = instrId;
 	}
 
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(long id) {
-		this.id = id;
-	}
-	
 	public void addExecution(Execution exec) {
 		execList.add(exec);
 	}

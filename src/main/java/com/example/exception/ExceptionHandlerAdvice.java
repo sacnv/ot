@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 public class ExceptionHandlerAdvice {
 	
-	@ExceptionHandler(APIException.class)
-    public ResponseEntity<String> handleException(APIException e) {
+	@ExceptionHandler(OTException.class)
+    public ResponseEntity<String> handleException(OTException e) {
         // log exception
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

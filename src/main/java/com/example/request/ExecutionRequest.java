@@ -1,45 +1,45 @@
+
 package com.example.request;
 
 import java.math.BigDecimal;
 
 public class ExecutionRequest {
-	
-	private Long quantity;
 
-	private BigDecimal execPrice;
-	
-	private Long orderBookId;
-	
-	public ExecutionRequest(Long orderBookId, BigDecimal execPrice, Long quantity) {
-		super();
-		this.quantity = quantity;
-		this.execPrice = execPrice;
-		this.orderBookId = orderBookId;
-	}
+    private Long quantity;
 
-	public Long getQuantity() {
-		return quantity;
-	}
+    private BigDecimal execPrice;
 
-	public void setQuantity(Long quantity) {
-		this.quantity = quantity;
-	}
+    private Long orderBookId;
 
-	public BigDecimal getExecPrice() {
-		return execPrice;
-	}
+    public ExecutionRequest(Long orderBookId, BigDecimal execPrice, Long quantity) {
+        super();
+        this.quantity = quantity;
+        this.execPrice = execPrice;
+        this.orderBookId = orderBookId;
+    }
 
-	public void setExecPrice(BigDecimal execPrice) {
-		this.execPrice = execPrice;
-	}
+    public Long getQuantity() {
+        return quantity;
+    }
 
-	public Long getOrderBookId() {
-		return orderBookId;
-	}
+    public void setQuantity(Long quantity) {
+        this.quantity = quantity;
+    }
 
-	public void setOrderBookId(Long orderBookId) {
-		this.orderBookId = orderBookId;
-	}
+    public BigDecimal getExecPrice() {
+        return execPrice;
+    }
 
+    public void setExecPrice(BigDecimal execPrice) {
+        this.execPrice = execPrice;
+    }
+
+    public Long getOrderBookId() {
+        return orderBookId;
+    }
+
+    public void setOrderBookId(Long orderBookId) {
+        this.orderBookId = orderBookId;
+    }
 
 }

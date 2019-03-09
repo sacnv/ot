@@ -1,3 +1,4 @@
+
 package com.example.controller;
 
 import java.util.Optional;
@@ -19,12 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.domain.BookStats;
 import com.example.domain.Order;
-import com.example.domain.OrderStatus;
 import com.example.request.ExecutionRequest;
 import com.example.request.OrderRequest;
 import com.example.response.SimpleResponse;
-import com.example.service.ExecutionService;
-import com.example.service.OrderService;
+import com.example.service.OrderBookService;
 import com.example.trade.ApplicationLiterals;
 
 import io.swagger.annotations.ApiOperation;
@@ -32,100 +31,94 @@ import io.swagger.annotations.ApiOperation;
 @Component
 @RestController
 public class OrderBookController {
-	
-	@Autowired
-	private OrderService orderService;
-	
-	@Autowired
-	private ExecutionService execService;
 
-	private static final Logger logger = LoggerFactory.getLogger(OrderBookController.class);
-	
-	
-	@ApiOperation(value = ApplicationLiterals.CREATE_BOOK)
-	
-	@PostMapping(value="/OrderBook", produces = MediaType.APPLICATION_JSON_VALUE)
-	
-	public SimpleResponse CreateBook(@RequestParam("instrId") Long instrId) {
-		
-		SimpleResponse resp = orderService.createBook(instrId);
-		
-		return resp;
-		
-	}
-	
-	@ApiOperation(value = ApplicationLiterals.OPEN_BOOK)
-	
-	@PutMapping(value="/OrderBook/{instrId}/open")
-	
-	public SimpleResponse openOrderBook(@PathVariable("instrId") Long instrId) {
-		logger.debug("Request received");
-		
-		SimpleResponse resp = orderService.updateBookStatus(instrId, OrderStatus.OPEN);
-		
-		return resp;
-		
-	}
-	
-	
-	@ApiOperation(value = ApplicationLiterals.CLOSE_BOOK)
-	
-	@PutMapping(value="/OrderBook/{instrId}/close")
-	
-	public SimpleResponse closeOrderBook(@PathVariable("instrId") Long instrId) {
-		logger.debug("Request received");
-		
-		SimpleResponse resp = orderService.updateBookStatus(instrId, OrderStatus.CLOSED);
-		
-		return resp;
-		
-	}
+    @Autowired
+    private OrderBookService orderBookService;
 
-	@ApiOperation(value = ApplicationLiterals.VIEW_STATS)
-	
-	@GetMapping(value="/OrderBook/{instrId}/stats",  produces = MediaType.APPLICATION_JSON_VALUE)
-	public BookStats getOrderBookStats(@PathVariable("instrId") Long instrId) {
-		
-		BookStats stats = orderService.getStats(instrId);
+    private static final Logger logger = LoggerFactory.getLogger(OrderBookController.class);
 
-		return stats;
-		
-	}
-	
-	
-	@ApiOperation(value = ApplicationLiterals.ADD_EXEC)
-	
-	@PostMapping(value="/OrderBook/{instrId}/Execution",  produces = MediaType.APPLICATION_JSON_VALUE)
-	public SimpleResponse addExecution(@PathVariable("instrId") Long instrId, @RequestBody ExecutionRequest exec) {
-		
-		SimpleResponse resp = execService.addExecution(exec);
-		return resp;
-		
-	}
-	
-	@ApiOperation(value = ApplicationLiterals.ADD_ORDER)
-	
-	@PostMapping(value="/OrderBook/{instrId}/Order",  produces = MediaType.APPLICATION_JSON_VALUE)
-	public SimpleResponse addOrder(@PathVariable("instrId") Long instrId, @RequestBody OrderRequest orderRequest) {
-		
-		logger.debug("Request for Order received");
-		SimpleResponse resp = orderService.addOrder(orderRequest);
+    @ApiOperation(
+            value = ApplicationLiterals.CREATE_BOOK)
 
-		return resp;
-		
-	}
-	
-	@ApiOperation(value = ApplicationLiterals.GET_ORDER)
-	
-	@GetMapping(value="/OrderBook/{instrId}/Order/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Order> getOrder(@PathVariable("orderId") Long orderId, @PathVariable("instrId") Long instrId) {
-		
-		Optional<Order> storedOrder = orderService.getOrder(orderId, instrId);
-		
-		if(storedOrder.isPresent()) {
-			return new ResponseEntity<Order>(storedOrder.get(), HttpStatus.OK);
-		} else {
-			return new ResponseEntity<Order>(HttpStatus.NOT_FOUND);
-		}
-	}
+    @PostMapping(
+            value = "/v1/order-books",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+
+    public SimpleResponse createOrderBook(@RequestParam("instrId") Long instrId) {
+
+        return orderBookService.createBook(instrId);
+
+    }
+
+    @ApiOperation(
+            value = ApplicationLiterals.CLOSE_BOOK)
+
+    @PutMapping(
+            value = "/v1/order-books/{orderBookId}")
+
+    public SimpleResponse closeOrderBook(@PathVariable("orderBookId") Long orderBookId) {
+        logger.debug("Request received");
+
+        return orderBookService.closeOrderBook(orderBookId);
+
+    }
+
+    @ApiOperation(
+            value = ApplicationLiterals.GET_STATS)
+
+    @GetMapping(
+            value = "/v1/order-books/{orderBookId}/stats",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public BookStats getOrderBookStats(@PathVariable("orderBookId") Long orderBookId) {
+
+        return orderBookService.getStats(orderBookId);
+
+    }
+
+    @ApiOperation(
+            value = ApplicationLiterals.ADD_EXEC)
+
+    @PostMapping(
+            value = "/v1/order-books/{orderBookId}/executions",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public SimpleResponse addExecution(@PathVariable("orderBookId") Long orderBookId,
+            @RequestBody ExecutionRequest exec) {
+
+        return orderBookService.addExecution(exec);
+
+    }
+
+    @ApiOperation(
+            value = ApplicationLiterals.ADD_ORDER)
+
+    @PostMapping(
+            value = "/v1/order-books/{orderBookId}/orders",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public SimpleResponse addOrder(@PathVariable("orderBookId") Long orderBookId,
+            @RequestBody OrderRequest orderRequest) {
+
+        logger.debug("Request for Order received");
+
+        return orderBookService.addOrder(orderBookId, orderRequest);
+
+    }
+
+    @ApiOperation(
+            value = ApplicationLiterals.GET_ORDER)
+
+    @GetMapping(
+            value = "/v1/order-books/{orderBookId}/orders/{orderId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Order> getOrder(@PathVariable("orderBookId") Long orderBookId,
+            @PathVariable("orderId") Long orderId) {
+
+        Optional<Order> storedOrder = orderBookService.getOrder(orderBookId, orderId);
+
+        if (storedOrder.isPresent()) {
+            return new ResponseEntity<>(storedOrder.get(), HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

@@ -1,23 +1,21 @@
+
 package com.example.domain;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum OrderType {
 
-	LIMIT("limit"), MARKET("market");
-	
-	private String type;
-	
-	private OrderType(String type) {
-		this.setType(type);
-	}
+    LIMIT("limit"), MARKET("market");
 
-	@JsonValue
-	public String getType() {
-		return type;
-	}
+    private String type;
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    private OrderType(String type) {
+        this.type = type;
+    }
+
+    @JsonValue
+    public String getType() {
+        return type;
+    }
+
 }

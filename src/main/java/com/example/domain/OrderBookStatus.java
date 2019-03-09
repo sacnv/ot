@@ -1,13 +1,13 @@
 
 package com.example.domain;
 
-public enum OrderStatus {
+public enum OrderBookStatus {
 
-    VALID("valid"), INVALID("invalid");
+    OPEN("open"), CLOSED("closed"), EXECUTED("executed");
 
     private String status;
 
-    private OrderStatus(String status) {
+    private OrderBookStatus(String status) {
         this.status = status;
     }
 

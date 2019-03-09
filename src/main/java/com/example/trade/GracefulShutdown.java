@@ -1,3 +1,4 @@
+
 package com.example.trade;
 
 import java.util.concurrent.Executor;
@@ -14,48 +15,37 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.ContextClosedEvent;
 
+public class GracefulShutdown
+        implements TomcatConnectorCustomizer, ApplicationListener<ContextClosedEvent> {
 
-
-public class GracefulShutdown implements TomcatConnectorCustomizer, ApplicationListener<ContextClosedEvent> {
-
-	@Bean
-
-	public GracefulShutdown gracefulShutdown() {
-
-	    return new GracefulShutdown();
-
-	}
-
-	@Bean
-
-	public ConfigurableServletWebServerFactory webServerFactory(final GracefulShutdown gracefulShutdown) {
-
-	    TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
-
-	    factory.addConnectorCustomizers(gracefulShutdown);
-
-	    return factory;
-
-	}
-	
     private static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
-    private volatile Connector connector;
+    private Connector connector;
 
-    @Override
+    @Bean
+    public GracefulShutdown gracefulShutdown() {
+        return new GracefulShutdown();
+    }
 
-    public void customize(Connector connector) {
+    @Bean
+    public ConfigurableServletWebServerFactory
+            webServerFactory(final GracefulShutdown gracefulShutdown) {
+        TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
+        factory.addConnectorCustomizers(gracefulShutdown);
 
-        this.connector = connector;
+        return factory;
 
     }
 
     @Override
 
+    public void customize(Connector connector) {
+        this.connector = connector;
+    }
+
+    @Override
     public void onApplicationEvent(ContextClosedEvent event) {
-
         this.connector.pause();
-
         Executor executor = this.connector.getProtocolHandler().getExecutor();
 
         if (executor instanceof ThreadPoolExecutor) {
@@ -63,21 +53,15 @@ public class GracefulShutdown implements TomcatConnectorCustomizer, ApplicationL
             try {
 
                 ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-
                 threadPoolExecutor.shutdown();
 
                 if (!threadPoolExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
-
                     log.warn("Tomcat thread pool did not shut down gracefully within "
-
                             + "30 seconds. Proceeding with forceful shutdown");
-
                 }
-
-            } catch (InterruptedException ex) {
-
+            }
+            catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
-
             }
 
         }
@@ -85,6 +69,3 @@ public class GracefulShutdown implements TomcatConnectorCustomizer, ApplicationL
     }
 
 }
-
-
-

@@ -10,26 +10,22 @@ import com.example.util.IDGenerator;
 import com.example.util.OTBigFraction;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/*
- * This class can be even made shorter in future java version by declaring it as record class
- */
-
 public class Order {
 
-    private Long id = 0L;
+    private final Long id;
 
     @NotNull
-    private Long orderQty;
+    private final Long orderQty;
 
     // Can be changed to Instant, if nanosecond level precision is required
     @JsonIgnore
-    private LocalDateTime entryDate;
+    private final LocalDateTime entryDate;
 
     @NotNull
-    private Long instrId;
+    private final Long instrId;
 
     @NotNull
-    private OrderType type;
+    private final OrderType type;
 
     private OrderStatus status = OrderStatus.VALID;
 
@@ -43,10 +39,12 @@ public class Order {
     private OTBigFraction allocationFactor;
 
     public Order() {
+        this.id = IDGenerator.generateId(Order.class);
         this.orderPrice = BigDecimal.ZERO;
         this.orderQty = 0L;
         this.instrId = -1L;
         this.type = OrderType.LIMIT;
+        this.entryDate = LocalDateTime.now();
     }
 
     public Long getOrderQty() {
@@ -57,8 +55,8 @@ public class Order {
         return entryDate;
     }
 
-    public Order(@NotNull Long orderQty, @NotNull Long instrId, @NotNull OrderType type,
-            @NotNull BigDecimal orderPrice) {
+    public Order(@NotNull Long orderQty, @NotNull Long instrId,
+            @NotNull OrderType type, @NotNull BigDecimal orderPrice) {
         super();
         this.id = IDGenerator.generateId(Order.class);
         this.orderQty = orderQty;

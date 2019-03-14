@@ -41,7 +41,8 @@ public class OrderTradeApplicationTests {
     @Test
     public void getOrder() {
         ResponseEntity<Order> storedOrder = this.restTemplate
-                .getForEntity("http://localhost:" + port + "/Order/1/instr/1", Order.class);
+                .getForEntity("http://localhost:" + port 
+                        + "/order-books/1/orders/1", Order.class);
         assertEquals(HttpStatus.NOT_FOUND, storedOrder.getStatusCode());
     }
 

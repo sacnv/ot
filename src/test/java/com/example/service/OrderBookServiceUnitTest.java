@@ -77,8 +77,6 @@ public class OrderBookServiceUnitTest {
         when(mockBook.getId()).thenReturn(1L);
         when(mockBook.getInstrId()).thenReturn(1L);
         when(mockBook.getStatus()).thenReturn(OrderBookStatus.OPEN);
-        // .thenReturn(OrderBookStatus.OPEN)
-        // .thenReturn(OrderBookStatus.EXECUTED);
 
         OrderBook executedMockBook = Mockito.mock(OrderBook.class);
         when(executedMockBook.getId()).thenReturn(2L);
@@ -97,6 +95,7 @@ public class OrderBookServiceUnitTest {
 
         when(mockBook.getOrderList()).thenReturn(odList);
         when(closedMockBook.getOrderList()).thenReturn(odList);
+        when(mockBook.getTotalDemand()).thenReturn(30L);
         when(closedMockBook.getExecList()).thenReturn(execList);
 
         Collection<OrderBook> bookList = new CopyOnWriteArrayList<OrderBook>();
@@ -230,7 +229,7 @@ public class OrderBookServiceUnitTest {
 
     @Test
     public void testAddExecForClosedBook() {
-        ExecutionRequest exec = new ExecutionRequest(3L, BigDecimal.TEN, 20L);
+        ExecutionRequest exec = new ExecutionRequest(3L, BigDecimal.TEN, 10L);
         SimpleResponse resp = mockService.addExecution(exec);
         boolean result = resp.getMessage().contains("successfully");
         assertThat(result).isTrue();

@@ -9,8 +9,8 @@ public enum OrderType {
 
     private String type;
 
-    private OrderType(String type) {
-        this.type = type;
+    OrderType(String orderType) {
+        this.type = orderType;
     }
 
     @JsonValue

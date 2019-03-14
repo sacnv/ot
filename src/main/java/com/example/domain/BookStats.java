@@ -49,7 +49,8 @@ public class BookStats {
         return orderStatsByValidity;
     }
 
-    public void setOrderStatsByValidity(Map<Boolean, LongSummaryStatistics> orderStatsByValidity) {
+    public void setOrderStatsByValidity(Map<Boolean,
+            LongSummaryStatistics> orderStatsByValidity) {
         this.orderStatsByValidity = orderStatsByValidity;
     }
 

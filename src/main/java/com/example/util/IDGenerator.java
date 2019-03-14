@@ -6,14 +6,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class IDGenerator {
 
-    private static final ConcurrentHashMap<Class<?>, AtomicLong> mapper = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Class<?>, AtomicLong> MAPPER =
+            new ConcurrentHashMap<>();
 
     private IDGenerator() {
     }
 
     public static long generateId(Class<?> clazz) {
 
-        mapper.putIfAbsent(clazz, new AtomicLong(1)); // NOSONAR
-        return mapper.get(clazz).getAndIncrement();
+        MAPPER.putIfAbsent(clazz, new AtomicLong(1)); // NOSONAR
+        return MAPPER.get(clazz).getAndIncrement();
     }
 }

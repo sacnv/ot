@@ -14,33 +14,30 @@ import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerF
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.stereotype.Component;
 
-public class GracefulShutdown
-        implements TomcatConnectorCustomizer, ApplicationListener<ContextClosedEvent> {
+@Component
+public class GracefulShutdown implements TomcatConnectorCustomizer,
+        ApplicationListener<ContextClosedEvent> {
 
-    private static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(GracefulShutdown.class);
 
     private Connector connector;
 
     @Bean
-    public GracefulShutdown gracefulShutdown() {
-        return new GracefulShutdown();
-    }
-
-    @Bean
     public ConfigurableServletWebServerFactory
             webServerFactory(final GracefulShutdown gracefulShutdown) {
-        TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
+        TomcatServletWebServerFactory factory =
+                new TomcatServletWebServerFactory();
         factory.addConnectorCustomizers(gracefulShutdown);
 
         return factory;
-
     }
 
     @Override
-
-    public void customize(Connector connector) {
-        this.connector = connector;
+    public void customize(Connector conn) {
+        this.connector = conn;
     }
 
     @Override
@@ -52,15 +49,18 @@ public class GracefulShutdown
 
             try {
 
-                ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+                ThreadPoolExecutor threadPoolExecutor =
+                        (ThreadPoolExecutor) executor;
                 threadPoolExecutor.shutdown();
 
-                if (!threadPoolExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
-                    log.warn("Tomcat thread pool did not shut down gracefully within "
-                            + "30 seconds. Proceeding with forceful shutdown");
-                }
-            }
-            catch (InterruptedException ex) {
+                if (!threadPoolExecutor.awaitTermination(30,
+                        TimeUnit.SECONDS)) {
+                    LOGGER.warn(
+                            "Tomcat thread pool did not shut down gracefully "
+                                    + "within 30 seconds. Proceeding with "
+                                    + "forceful shutdown");
+                    }
+                } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
 

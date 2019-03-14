@@ -68,5 +68,17 @@ public class OrderBook {
     public void addExecution(Execution exec) {
         execList.add(exec);
     }
-        
+
+    public Execution removeLastExecution() {
+        return execList.remove(execList.size() - 1);
+    }
+
+    public Long getTotalDemand() {
+        return orderList.stream().filter(Order::isValid)
+                .mapToLong(Order::getOrderQty).sum();
+    }
+
+    public Long getTotalExecQty() {
+        return execList.stream().mapToLong(Execution::getQuantity).sum();
+    }
 }

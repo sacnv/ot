@@ -7,8 +7,8 @@ public enum OrderBookStatus {
 
     private String status;
 
-    private OrderBookStatus(String status) {
-        this.status = status;
+    OrderBookStatus(String stat) {
+        this.status = stat;
     }
 
     public String getStatus() {

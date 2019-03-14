@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 
 public class Execution {
 
-    private Long id = 0L;
+    private Long id;
 
     private Long quantity;
 
@@ -20,7 +20,7 @@ public class Execution {
     public Execution() {
     }
 
-    public Execution(Long quantity, BigDecimal execPrice, Long orderBookId) { // Junit
+    public Execution(Long quantity, BigDecimal execPrice, Long orderBookId) {
         super();
         this.id = IDGenerator.generateId(Execution.class);
         this.quantity = quantity;
@@ -28,7 +28,8 @@ public class Execution {
         this.orderBookId = orderBookId;
     }
 
-    public Execution(Long id, Long quantity, BigDecimal execPrice, Long orderBookId) { // Junit
+    public Execution(Long id, Long quantity, BigDecimal execPrice,
+            Long orderBookId) {
         super();
         this.id = id;
         this.quantity = quantity;

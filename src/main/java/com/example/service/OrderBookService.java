@@ -42,7 +42,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 @Component
 public class OrderBookService {
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderBookService.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(OrderBookService.class);
 
     private List<OrderBook> books = new CopyOnWriteArrayList<>();
 
@@ -50,55 +51,52 @@ public class OrderBookService {
         super();
     }
 
-    OrderBookService(List<OrderBook> books) { // for Junit
+    OrderBookService(List<OrderBook> bookList) { // for Junit
         super();
-        this.books = books;
+        this.books = bookList;
     }
 
     public SimpleResponse closeOrderBook(Long orderBookId) {
         return updateOrderBookStatus(orderBookId, OrderBookStatus.CLOSED);
     }
 
-    public SimpleResponse updateOrderBookStatus(Long orderBookId, OrderBookStatus newStatus) {
-
+    public synchronized SimpleResponse updateOrderBookStatus(Long orderBookId,
+            OrderBookStatus newStatus) {
+        LOGGER.info("updating status {} for book with order book id {}",
+                newStatus, orderBookId);
         OrderBook book = getBookFromOrderBooks(orderBookId);
-        logger.info("Order books size = {}", books.size());
-
         OrderBookStatus currentStatus = book.getStatus();
-        validateBookStatuses(newStatus, currentStatus);
 
-        synchronized (this) {
-            book.setStatus(newStatus);
-        }
+        validateBookStatuses(newStatus, currentStatus);
+        book.setStatus(newStatus);
 
         return new SimpleResponse(orderBookId,
-                "Order book status updated successfully for order book id = " + orderBookId);
+                "Order book status updated successfully for order book id = "
+                        + orderBookId);
     }
 
-    public SimpleResponse createBook(Long instrId) {
-
+    public synchronized SimpleResponse createBook(Long instrId) {
+        LOGGER.info("creating book for instr id {}", instrId);
         SimpleResponse resp;
-        Optional<OrderBook> book =
-                books.stream().filter(ob -> ob.getInstrId().equals(instrId)).findFirst();
+        Optional<OrderBook> book = books.stream()
+                .filter(ob -> ob.getInstrId().equals(instrId)).findFirst();
 
         if (book.isPresent()) {
             resp = new SimpleResponse(instrId,
                     "Order Book already exists for instr id =" + instrId);
-        }
-        else {
-
+        } else {
             OrderBook newBook = new OrderBook(instrId);
-            synchronized (this) {
-                books.add(newBook);
-            }
-            resp = new SimpleResponse(instrId, "Order Book created for instr id =" + instrId);
+            books.add(newBook);
+            resp = new SimpleResponse(instrId,
+                    "Order Book created for instr id =" + instrId);
         }
 
         return resp;
     }
 
-    public SimpleResponse addOrder(Long orderBookId, OrderRequest orderRequest) {
-
+    public synchronized SimpleResponse addOrder(Long orderBookId,
+            OrderRequest orderRequest) {
+        LOGGER.info("adding order for book id {}", orderBookId);
         OrderBook book = getBookFromOrderBooks(orderBookId);
 
         if (!OrderBookStatus.OPEN.equals(book.getStatus())) {
@@ -107,20 +105,20 @@ public class OrderBookService {
 
         validateOrder(orderRequest);
 
-        Order order = new Order(orderRequest.getOrderQty(), orderRequest.getInstrId(),
-                orderRequest.getType(), orderRequest.getOrderPrice());
+        Order order =
+                new Order(orderRequest.getOrderQty(), orderRequest.getInstrId(),
+                        orderRequest.getType(), orderRequest.getOrderPrice());
 
-        synchronized (this) {
-            book.getOrderList().add(order);
-        }
-
+        book.getOrderList().add(order);
         return new SimpleResponse(order.getId(), "Order successfully added");
     }
 
     public Optional<Order> getOrder(Long orderBookId, Long orderId) {
-
+        LOGGER.info("getting order with id {} from book id {}",
+                orderId, orderBookId);
         OrderBook book = getBookFromOrderBooks(orderBookId);
-        List<Order> orders = book.getOrderList().stream().filter(o1 -> o1.getId().equals(orderId))
+        List<Order> orders = book.getOrderList().stream()
+                .filter(o1 -> o1.getId().equals(orderId))
                 .collect(Collectors.toList());
 
         if (orders.isEmpty()) {
@@ -134,8 +132,7 @@ public class OrderBookService {
         if (OrderType.LIMIT.equals(orderRequest.getType())
                 && null == orderRequest.getOrderPrice()) {
             throw new OTException("Limit Orders cannot have empty price");
-        }
-        else if (OrderType.MARKET.equals(orderRequest.getType())
+        } else if (OrderType.MARKET.equals(orderRequest.getType())
                 && null != orderRequest.getOrderPrice()) {
             throw new OTException("Market Orders should have empty price");
         }
@@ -146,10 +143,9 @@ public class OrderBookService {
         return books;
     }
 
-    // Long method, will need to be split in smaller methods
     public BookStats getStats(Long orderBookId) {
 
-        logger.info(getJson());
+        LOGGER.info(getJson());
         BookStats bookStats = new BookStats();
         OrderBook book = getBookFromOrderBooks(orderBookId);
 
@@ -162,7 +158,8 @@ public class OrderBookService {
         bookStats.setOrderStats(orderStats);
 
         // Get earliest and latest order
-        Comparator<Order> comparator = Comparator.comparing(Order::getEntryDate);
+        Comparator<Order> comparator =
+                Comparator.comparing(Order::getEntryDate);
 
         Optional<Order> earliest = orderList.stream().min(comparator);
         Optional<Order> latest = orderList.stream().max(comparator);
@@ -172,21 +169,25 @@ public class OrderBookService {
 
         // Stats based on valid/invalid orders
         Map<Boolean, LongSummaryStatistics> orderStatsByValidity =
-                orderList.stream().collect(partitioningBy(Order::isValid,
-                        collectingAndThen(summarizingLong(Order::getOrderQty), x -> x)));
+                orderList.stream()
+                        .collect(partitioningBy(Order::isValid,
+                                collectingAndThen(
+                                        summarizingLong(Order::getOrderQty),
+                                        x -> x)));
 
         bookStats.setOrderStatsByValidity(orderStatsByValidity);
 
         // Get table for limit prices and demand per limit price
-        Map<BigDecimal, Long> limitTable = orderList.stream()
-                .filter(od -> od.getType().equals(OrderType.LIMIT) && od.isValid())
-                .collect(toMap(Order::getOrderPrice, Order::getExecQty, (x1, x2) -> (x1 + x2)));
+        Map<BigDecimal, Long> limitTable = orderList.stream().filter(
+                od -> od.getType().equals(OrderType.LIMIT) && od.isValid())
+                .collect(toMap(Order::getOrderPrice, Order::getExecQty,
+                        (x1, x2) -> (x1 + x2)));
 
         bookStats.setLimitTable(limitTable);
 
         // Get accumulated exec quantity
-        LongSummaryStatistics execStats =
-                book.getExecList().stream().collect(summarizingLong(Execution::getQuantity));
+        LongSummaryStatistics execStats = book.getExecList().stream()
+                .collect(summarizingLong(Execution::getQuantity));
 
         bookStats.setExecStats(execStats);
 
@@ -201,112 +202,130 @@ public class OrderBookService {
         return bookStats;
     }
 
-    private void validateBookStatuses(OrderBookStatus newStatus, OrderBookStatus currentStatus) {
-
+    private void validateBookStatuses(OrderBookStatus newStatus,
+            OrderBookStatus currentStatus) {
+        LOGGER.info("validating new status {} against current status {}",
+                newStatus, currentStatus);
         if (!(CLOSED.equals(newStatus)) && !(OPEN.equals(newStatus))) {
-            throw new OTException("provided status is invalid should be either open or closed");
-        }
-        else if (EXECUTED.equals(currentStatus)) {
-            throw new OTException("Order Book is already executed, its status cannot be changed");
-        }
-        else if (CLOSED.equals(currentStatus) && OPEN.equals(newStatus)) {
-            throw new OTException("Order Book is already closed, its cannot be opened");
-        }
-        else if (null == currentStatus && CLOSED.equals(newStatus)) {
+            throw new OTException(
+                 "provided status is invalid should be either open or closed");
+        } else if (EXECUTED.equals(currentStatus)) {
+            throw new OTException(
+               "Order Book is already executed, its status cannot be changed");
+        } else if (CLOSED.equals(currentStatus) && OPEN.equals(newStatus)) {
+            throw new OTException(
+                    "Order Book is already closed, its cannot be opened");
+        } else if (null == currentStatus && CLOSED.equals(newStatus)) {
             throw new OTException("Order Book is not open");
         }
     }
 
     public OrderBook getBookFromOrderBooks(Long orderBookId) {
-
-        return getBooks().stream().filter(ob -> ob.getId().equals(orderBookId)).findAny()
-                .orElseThrow(
-                        () -> new OTException("Order Book not found for book id =" + orderBookId));
+        LOGGER.info("get Book for book id {}", orderBookId);
+        return getBooks().stream().filter(ob -> ob.getId().equals(orderBookId))
+                .findAny().orElseThrow(() -> new OTException(
+                        "Order Book not found for book id =" + orderBookId));
 
     }
 
-    public SimpleResponse addExecution(ExecutionRequest exec) { 
-
+    public synchronized SimpleResponse addExecution(ExecutionRequest exec) {
+        LOGGER.info("adding execution {}", exec);
         OrderBook book = getBookFromOrderBooks(exec.getOrderBookId());
         validateExecRequest(book, exec);
 
-        Execution newExec =
-                new Execution(exec.getQuantity(), exec.getExecPrice(), exec.getOrderBookId());
+        Execution newExec = new Execution(exec.getQuantity(),
+                exec.getExecPrice(), exec.getOrderBookId());
 
-        synchronized (this) {
-            book.addExecution(newExec);
-            updateOrderBook(book, newExec);
-        }
+        book.addExecution(newExec);
+        updateOrderBook(book, newExec);
 
-        return new SimpleResponse(newExec.getId(), "Execution added successfully to order book");
+        return new SimpleResponse(newExec.getId(),
+                "Execution added successfully to order book");
 
     }
 
     private void validateExecRequest(OrderBook book, ExecutionRequest exec) {
-
-        if (OrderBookStatus.CLOSED != book.getStatus()) { // if status is null, open or executed,
-                                                          // throw an exception
-
+        if (OrderBookStatus.CLOSED != book.getStatus()) {
             throw new OTException(
-                    "Order Book for given Order Id is not closed, executions cannot be added");
+                    "Order Book for given order id is" + book.getStatus()
+                    + ", executions cannot be added");
         }
 
-        if (!book.getExecList().isEmpty()) { // check also close status
-
-            Execution firstExec = book.getExecList().get(0); // check for 1st price
+        if (!book.getExecList().isEmpty()) {
+         // check for 1st price
+            Execution firstExec = book.getExecList().get(0);
             if (firstExec.getExecPrice().compareTo(exec.getExecPrice()) != 0) {
-
-                throw new OTException(
-                        "Exec price for new exec should be " + firstExec.getExecPrice());
+                throw new OTException("Exec price for new exec should be "
+                        + firstExec.getExecPrice());
             }
-
         }
 
-        if (exec.getExecPrice().compareTo(BigDecimal.ZERO) < 0 || exec.getQuantity() < 0) {
+        if (exec.getExecPrice().compareTo(BigDecimal.ZERO) < 0
+                || exec.getQuantity() < 0) {
             throw new OTException("Execution price or quantity is invalid ");
         }
 
     }
 
-    private void updateOrderBook(OrderBook book, Execution exec) {
-        Predicate<Order> limitType = order -> (OrderType.LIMIT == order.getType());
-        Predicate<Order> lesserPrice =
-                order -> (order.getOrderPrice().compareTo(exec.getExecPrice()) < 0);
-
-        // check if this is the first execution to be added by checking execution list size
+    private synchronized void updateOrderBook(OrderBook book, Execution exec) {
+        LOGGER.info("updating order book after adding execution");
+        Predicate<Order> limitType =
+                order -> (OrderType.LIMIT == order.getType());
+        Predicate<Order> lesserPrice = order -> (order.getOrderPrice()
+                .compareTo(exec.getExecPrice()) < 0);
+        // check if this is the first execution to be added by checking
+        //execution list size
         boolean isFirstExec = book.getExecList().size() == 1;
 
         // invalidate orders if this is first execution
         if (isFirstExec) {
-            book.getOrderList().stream().filter(limitType.and(lesserPrice)).forEach(order -> {
-                order.setStatus(OrderStatus.INVALID);
-                order.setExecQty(0L);
-            });
+            book.getOrderList().stream().filter(limitType.and(lesserPrice))
+                    .forEach(order -> {
+                        order.setStatus(OrderStatus.INVALID);
+                        order.setExecQty(0L);
+                    });
         }
 
         // get valid demand
-        Long totalDemand = book.getOrderList().stream().filter(Order::isValid)
-                .mapToLong(Order::getOrderQty).sum();
+        Long totalDemand = book.getTotalDemand();
 
-        // calculate allocation factor (order quantity / total demand) and store it on each valid
-        // order
-        book.getOrderList().stream().filter(Order::isValid).forEach(order -> order
-                .setAllocationFactor(new OTBigFraction(order.getOrderQty(), totalDemand)));
+        // check if total exec quantity matches total demand
+        Long totalExecQty = book.getTotalExecQty();
+
+        if (totalExecQty.compareTo(totalDemand) > 0) {
+            //Remove added execution to maintain correct state
+            book.removeLastExecution();
+            throw new OTException("total execution quantity " + totalExecQty
+                    + " cannot exceed total demand " + totalDemand);
+        }
+
+        // calculate allocation factor (order quantity / total demand)
+        // and store it on each valid order
+        book.getOrderList().stream().filter(Order::isValid)
+            .forEach(order -> order.setAllocationFactor(
+                        new OTBigFraction(order.getOrderQty(), totalDemand)));
 
         // distribute valid demand
         book.getOrderList().stream().filter(Order::isValid)
-                .forEach(order -> order.setExecQty(order.getExecQty()
-                        + (order.getAllocationFactor().multiply(exec.getQuantity())).longValue()));
+                .forEach(order -> order.setExecQty(
+                        (order.getAllocationFactor()
+                                .multiply(totalExecQty)).longValue()));
+        executeOrders(book, totalDemand, totalExecQty);
 
-        // check if total exec quantity matches total demand
+    }
 
-        Long totalExecQty = book.getExecList().stream().mapToLong(Execution::getQuantity).sum();
+    private synchronized void executeOrders(OrderBook book, Long totalDemand,
+            Long totalExecQty) {
+        LOGGER.info("book id {}, totalDemand {}, totalExecQty {}",
+                book.getId(), totalDemand, totalExecQty);
+       if (totalDemand.equals(totalExecQty)) {
 
-        if (totalDemand.equals(totalExecQty)) {
-
-            //Recalculate the execution quantity to accurately allocate execution quantity
-            book.getOrderList().stream().filter(Order::isValid).forEach(order -> order
-                    .setExecQty((order.getAllocationFactor().multiply(totalExecQty)).longValue()));
+            LOGGER.info("total execution quantity matches total demand");
+            // Recalculate the execution quantity to accurately allocate it
+            book.getOrderList().stream().filter(Order::isValid)
+                    .forEach(order -> order.setExecQty(
+                            (order.getAllocationFactor().multiply(totalExecQty))
+                                    .longValue()));
 
             book.setStatus(OrderBookStatus.EXECUTED);
         }
@@ -316,12 +335,13 @@ public class OrderBookService {
 
         String json = null;
         ObjectMapper mapper = new ObjectMapper();
+
         ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
         try {
             json = ow.writeValueAsString(books);
-        }
-        catch (IOException e) {
-            logger.error("There was an error converting order book array to json {}",
+        } catch (IOException e) {
+            LOGGER.error(
+                    "There was an error converting order book array to json {}",
                     e.getMessage());
         }
 

@@ -20,8 +20,8 @@ public class OrderRequest {
 
     private BigDecimal orderPrice;
 
-    public OrderRequest(@NotNull Long instrId, @NotNull Long orderQty, @NotNull OrderType type,
-            BigDecimal orderPrice) { // Junit
+    public OrderRequest(@NotNull Long instrId, @NotNull Long orderQty,
+            @NotNull OrderType type, BigDecimal orderPrice) {
         super();
         this.orderQty = orderQty;
         this.instrId = instrId;

@@ -10,7 +10,8 @@ public class ExceptionHandlerAdvice {
     @ExceptionHandler(OTException.class)
     public ResponseEntity<String> handleException(OTException e) {
         // log exception
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(e.getMessage());
     }
 
 }

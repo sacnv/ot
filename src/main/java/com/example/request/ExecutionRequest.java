@@ -11,7 +11,8 @@ public class ExecutionRequest {
 
     private Long orderBookId;
 
-    public ExecutionRequest(Long orderBookId, BigDecimal execPrice, Long quantity) {
+    public ExecutionRequest(Long orderBookId, BigDecimal execPrice,
+            Long quantity) {
         super();
         this.quantity = quantity;
         this.execPrice = execPrice;

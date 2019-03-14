@@ -13,7 +13,6 @@ public final class IDGenerator {
     }
 
     public static long generateId(Class<?> clazz) {
-
         MAPPER.putIfAbsent(clazz, new AtomicLong(1)); // NOSONAR
         return MAPPER.get(clazz).getAndIncrement();
     }

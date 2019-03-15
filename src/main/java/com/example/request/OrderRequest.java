@@ -20,6 +20,13 @@ public class OrderRequest {
 
     private BigDecimal orderPrice;
 
+    public OrderRequest() {
+        this.orderQty = 0L;
+        this.instrId = 0L;
+        this.type = OrderType.LIMIT;
+
+    }
+
     public OrderRequest(@NotNull Long instrId, @NotNull Long orderQty,
             @NotNull OrderType type, BigDecimal orderPrice) {
         super();

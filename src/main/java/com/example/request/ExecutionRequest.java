@@ -11,6 +11,9 @@ public class ExecutionRequest {
 
     private Long orderBookId;
 
+    public ExecutionRequest() {
+    }
+
     public ExecutionRequest(Long orderBookId, BigDecimal execPrice,
             Long quantity) {
         super();

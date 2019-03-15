@@ -12,6 +12,10 @@ public class OTException extends RuntimeException {
         return shortMessage;
     }
 
+    public OTException() {
+        this.shortMessage = "";
+    }
+
     public OTException(String message) {
         super();
         this.shortMessage = message;

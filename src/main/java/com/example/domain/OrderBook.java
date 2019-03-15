@@ -19,7 +19,6 @@ public class OrderBook {
     private Long instrId;
 
     public OrderBook() {
-
     }
 
     public OrderBook(Long bookId) {

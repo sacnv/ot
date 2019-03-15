@@ -48,7 +48,6 @@ public class OrderBookService {
     private List<OrderBook> books = new CopyOnWriteArrayList<>();
 
     OrderBookService() {
-        super();
     }
 
     OrderBookService(List<OrderBook> bookList) { // for Junit

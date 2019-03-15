@@ -7,6 +7,9 @@ public class SimpleResponse {
 
     private String message;
 
+    public SimpleResponse() {
+    }
+
     public SimpleResponse(Long id, String message) {
         super();
         this.id = id;

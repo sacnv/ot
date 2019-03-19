@@ -9,11 +9,11 @@
 		<version>2.1.3.RELEASE</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>OrderTrade</artifactId>
+	<groupId>com.cs.orderbook</groupId>
+	<artifactId>OrderBookMgmt</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>OrderTrade</name>
-	<description>Demo project for Spring Boot</description>
+	<name>OrderBookMgmt</name>
+	<description>A service for managing order books</description>
 
 	<properties>
 		<java.version>1.8</java.version>
@@ -52,6 +52,7 @@
 			<version>2.9.2</version>
 		</dependency>
 		<!-- Swagger end -->
+		<!--  apache commons for BigFraction -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>

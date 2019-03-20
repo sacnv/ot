@@ -5,7 +5,6 @@ import static com.cs.orderbook.domain.OrderBookStatus.OPEN;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.summarizingLong;
-import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -17,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -60,7 +60,12 @@ public class OrderBookService {
         OrderBook book = getBookFromOrderBooks(orderBookId);
         OrderBookStatus currentStatus = book.getStatus();
 
-        validateBookStatuses(OrderBookStatus.CLOSED, currentStatus);
+        LOGGER.info("validating new status {} against current status {}",
+                OrderBookStatus.CLOSED, currentStatus);
+        if (!(OPEN.equals(currentStatus))) {
+            throw new OTException(
+                 "current order book status should be open");
+        }
         book.setStatus(OrderBookStatus.CLOSED);
 
         return new SimpleResponse(orderBookId,
@@ -150,61 +155,16 @@ public class OrderBookService {
         // Get total no. of orders
         bookStats.setTotalOrders(Long.valueOf(orderList.size()));
 
-        // Get earliest and latest order
-        Comparator<Order> dateComparator =
-                Comparator.comparing(Order::getEntryDate);
-
-        Optional<Order> earliest = orderList.stream().min(dateComparator);
-        Optional<Order> latest = orderList.stream().max(dateComparator);
-
-        bookStats.setEarliestOrder(earliest.orElse(null));
-        bookStats.setLastOrder(latest.orElse(null));
-
-        Comparator<Order> qtyComparator =
-                Comparator.comparing(Order::getOrderQty);
-
-        Optional<Order> biggestValidOrder = orderList.stream()
-                .filter(Order::isValid).max(qtyComparator);
-        Optional<Order> smallestValidOrder = orderList.stream()
-                .filter(Order::isValid).min(qtyComparator);
-
-        Optional<Order> biggestInvalidOrder = orderList.stream()
-                .filter(order -> !order.isValid()).max(qtyComparator);
-        Optional<Order> smallestInvalidOrder = orderList.stream()
-                .filter(order -> !order.isValid()).min(qtyComparator);
-
-        bookStats.setBiggestValidOrder(biggestValidOrder.orElse(null));
-        bookStats.setSmallestValidOrder(smallestValidOrder.orElse(null));
-
-        bookStats.setBiggestInvalidOrder(biggestInvalidOrder.orElse(null));
-        bookStats.setSmallestInvalidOrder(smallestInvalidOrder.orElse(null));
-
-        // Stats based on valid/invalid orders
-        Map<Boolean, LongSummaryStatistics> orderStatsByValidity =
-                orderList.stream()
-                        .collect(partitioningBy(Order::isValid,
-                                collectingAndThen(
-                                        summarizingLong(Order::getOrderQty),
-                                        x -> x)));
-
-        bookStats.setTotalInvalidOrders(
-                orderStatsByValidity.get(Boolean.FALSE).getCount());
-
-        bookStats.setTotalValidOrders(
-                orderStatsByValidity.get(Boolean.TRUE).getCount());
+        setOrdersByComparison(bookStats, orderList);
+        setStatsByOrderValidity(bookStats, orderList);
 
         bookStats.setValidDemand(book.getTotalValidDemand());
         bookStats.setInvalidDemand(book.getTotalInvalidDemand());
 
+        bookStats.setTotalDemand(book.getTotalDemand());
         bookStats.setAccumulatedExecQuantity(book.getAccumulatedExecQty());
 
-        // Get table for limit prices and demand per limit price
-        Map<BigDecimal, Long> limitTable = orderList.stream().filter(
-                od -> od.getType().equals(OrderType.LIMIT) && od.isValid())
-                .collect(toMap(Order::getOrderPrice, Order::getExecQty,
-                        (x1, x2) -> (x1 + x2)));
-
-        bookStats.setLimitTable(limitTable);
+        setLimitTables(bookStats, orderList);
 
         // Get Exec Price
         if (!book.getExecList().isEmpty()) {
@@ -214,16 +174,6 @@ public class OrderBookService {
         }
 
         return bookStats;
-    }
-
-    private void validateBookStatuses(OrderBookStatus newStatus,
-            OrderBookStatus currentStatus) {
-        LOGGER.info("validating new status {} against current status {}",
-                newStatus, currentStatus);
-        if (!(OPEN.equals(currentStatus))) {
-            throw new OTException(
-                 "current order book status should be open");
-        }
     }
 
     public OrderBook getBookFromOrderBooks(Long orderBookId) {
@@ -253,7 +203,7 @@ public class OrderBookService {
     private void validateExecRequest(OrderBook book, ExecutionRequest exec) {
         if (OrderBookStatus.CLOSED != book.getStatus()) {
             throw new OTException(
-                    "Order Book for given order id is" + book.getStatus()
+                    "Order Book for given order id is " + book.getStatus()
                     + ", executions cannot be added");
         }
 
@@ -273,7 +223,7 @@ public class OrderBookService {
 
     }
 
-    private synchronized void updateOrderBook(OrderBook book, Execution exec) {
+    private void updateOrderBook(OrderBook book, Execution exec) {
         LOGGER.info("updating order book after adding execution");
         Predicate<Order> limitType =
                 order -> (OrderType.LIMIT == order.getType());
@@ -291,6 +241,10 @@ public class OrderBookService {
                         order.setExecQty(0L);
                     });
         }
+
+        //Update exec price for valid orders
+        book.getOrderList().stream().filter(Order::isValid)
+            .forEach(order -> order.setExecPrice(exec.getExecPrice()));
 
         // get valid demand
         Long totalValidDemand = book.getTotalValidDemand();
@@ -323,7 +277,7 @@ public class OrderBookService {
 
     }
 
-    private synchronized void adjustExecQtyForOrders(OrderBook book,
+    private void adjustExecQtyForOrders(OrderBook book,
             Long totalExecQty) {
         // Check if there is still mismatch in accumulated
         // execution on orders and total execution
@@ -368,7 +322,7 @@ public class OrderBookService {
         }
     }
 
-    private synchronized void executeOrders(OrderBook book, Long totalDemand,
+    private void executeOrders(OrderBook book, Long totalDemand,
             Long totalExecQty) {
         LOGGER.info("book id {}, totalDemand {}, totalExecQty {}",
                 book.getId(), totalDemand, totalExecQty);
@@ -402,4 +356,68 @@ public class OrderBookService {
         return json;
     }
 
+    private void setOrdersByComparison(BookStats bookStats,
+            List<Order> orderList) {
+        // Get earliest and latest order
+        Comparator<Order> dateComparator =
+                Comparator.comparing(Order::getEntryDate);
+
+        Optional<Order> earliest = orderList.stream().min(dateComparator);
+        Optional<Order> latest = orderList.stream().max(dateComparator);
+
+        bookStats.setEarliestOrder(earliest.orElse(null));
+        bookStats.setLastOrder(latest.orElse(null));
+
+        Comparator<Order> qtyComparator =
+                Comparator.comparing(Order::getOrderQty);
+
+        Optional<Order> biggestValidOrder = orderList.stream()
+                .filter(Order::isValid).max(qtyComparator);
+        Optional<Order> smallestValidOrder = orderList.stream()
+                .filter(Order::isValid).min(qtyComparator);
+
+        bookStats.setBiggestValidOrder(biggestValidOrder.orElse(null));
+        bookStats.setSmallestValidOrder(smallestValidOrder.orElse(null));
+
+    }
+
+    private void setStatsByOrderValidity(BookStats bookStats,
+            List<Order> orderList) {
+        // Stats based on valid/invalid orders
+        Map<Boolean, LongSummaryStatistics> orderStatsByValidity =
+                orderList.stream()
+                        .collect(partitioningBy(Order::isValid,
+                                collectingAndThen(
+                                        summarizingLong(Order::getOrderQty),
+                                        x -> x)));
+
+        bookStats.setTotalInvalidOrders(
+                orderStatsByValidity.get(Boolean.FALSE).getCount());
+
+        bookStats.setTotalValidOrders(
+                orderStatsByValidity.get(Boolean.TRUE).getCount());
+
+    }
+
+    private void setLimitTables(BookStats bookStats, List<Order> orderList) {
+        Predicate<Order> limitType =
+                order -> (OrderType.LIMIT == order.getType());
+        Collector<Order, ?, Map<BigDecimal, Long>> mapper =
+                Collectors.toMap(Order::getOrderPrice, Order::getOrderQty,
+                (x1, x2) -> (x1 + x2));
+
+        // Get table for limit prices and demand per limit price
+        Map<BigDecimal, Long> validLimitTable = orderList.stream().filter(
+                limitType.and(Order::isValid)).collect(mapper);
+
+        Map<BigDecimal, Long> invalidLimitTable = orderList.stream().filter(
+                limitType.and(order -> !order.isValid())).collect(mapper);
+
+        Map<BigDecimal, Long> limitTable = orderList.stream().filter(limitType)
+                .collect(mapper);
+
+        bookStats.setLimitTable(limitTable);
+        bookStats.setValidLimitTable(validLimitTable);
+        bookStats.setInvalidLimitTable(invalidLimitTable);
+    }
 }

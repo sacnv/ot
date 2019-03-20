@@ -16,6 +16,8 @@ public class BookStats {
 
     private Long invalidDemand;
 
+    private Long totalDemand;
+
     private Long accumulatedExecQuantity;
 
     private Order earliestOrder;
@@ -26,11 +28,11 @@ public class BookStats {
 
     private Order smallestValidOrder;
 
-    private Order biggestInvalidOrder;
-
-    private Order smallestInvalidOrder;
-
     private Map<BigDecimal, Long> limitTable;
+
+    private Map<BigDecimal, Long> validLimitTable;
+
+    private Map<BigDecimal, Long> invalidLimitTable;
 
     private BigDecimal execPrice;
 
@@ -130,20 +132,28 @@ public class BookStats {
         this.smallestValidOrder = smallestValidOrder;
     }
 
-    public Order getBiggestInvalidOrder() {
-        return biggestInvalidOrder;
+    public Long getTotalDemand() {
+        return totalDemand;
     }
 
-    public void setBiggestInvalidOrder(Order biggestInvalidOrder) {
-        this.biggestInvalidOrder = biggestInvalidOrder;
+    public void setTotalDemand(Long totalDemand) {
+        this.totalDemand = totalDemand;
     }
 
-    public Order getSmallestInvalidOrder() {
-        return smallestInvalidOrder;
+    public Map<BigDecimal, Long> getValidLimitTable() {
+        return validLimitTable;
     }
 
-    public void setSmallestInvalidOrder(Order smallestInvalidOrder) {
-        this.smallestInvalidOrder = smallestInvalidOrder;
+    public void setValidLimitTable(Map<BigDecimal, Long> validLimitTable) {
+        this.validLimitTable = validLimitTable;
+    }
+
+    public Map<BigDecimal, Long> getInvalidLimitTable() {
+        return invalidLimitTable;
+    }
+
+    public void setInvalidLimitTable(Map<BigDecimal, Long> invalidLimitTable) {
+        this.invalidLimitTable = invalidLimitTable;
     }
 
 }

@@ -7,6 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import com.cs.orderbook.util.IDGenerator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class OrderBook {
 
@@ -84,6 +85,10 @@ public class OrderBook {
                 .mapToLong(Order::getOrderQty).sum();
     }
 
+    public Long getTotalDemand() {
+        return orderList.stream().mapToLong(Order::getOrderQty).sum();
+    }
+
     public Long getTotalExecQty() {
         return execList.stream().mapToLong(Execution::getQuantity).sum();
     }
@@ -93,6 +98,7 @@ public class OrderBook {
                 .mapToLong(Order::getExecQty).sum();
     }
 
+    @JsonIgnore
     public List<Order> getValidOrdersRevereseSortedByAllocationFactor() {
         return orderList.stream().filter(Order::isValid)
                 .sorted(Comparator.comparing(Order::getAllocationFactor)

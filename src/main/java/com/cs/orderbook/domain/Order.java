@@ -27,7 +27,7 @@ public class Order {
     @NotNull
     private final OrderType type;
 
-    private OrderStatus status = OrderStatus.VALID;
+    private OrderStatus status;
 
     @NotNull
     private BigDecimal orderPrice;
@@ -45,6 +45,7 @@ public class Order {
         this.instrId = -1L;
         this.type = OrderType.LIMIT;
         this.entryDate = LocalDateTime.now();
+        this.status = OrderStatus.VALID;
     }
 
     public Long getOrderQty() {
@@ -66,6 +67,7 @@ public class Order {
         this.entryDate = LocalDateTime.now();
         this.execQty = 0L;
         this.execPrice = BigDecimal.ZERO;
+        this.status = OrderStatus.VALID;
     }
 
     public Long getInstrId() {
@@ -76,6 +78,7 @@ public class Order {
         return type;
     }
 
+    @JsonIgnore
     public boolean isValid() {
         return (OrderStatus.VALID.equals(status));
     }

@@ -9,17 +9,13 @@ public class ExecutionRequest {
 
     private BigDecimal execPrice;
 
-    private Long orderBookId;
-
     public ExecutionRequest() {
     }
 
-    public ExecutionRequest(Long orderBookId, BigDecimal execPrice,
-            Long quantity) {
+    public ExecutionRequest(BigDecimal execPrice, Long quantity) {
         super();
         this.quantity = quantity;
         this.execPrice = execPrice;
-        this.orderBookId = orderBookId;
     }
 
     public Long getQuantity() {
@@ -36,14 +32,6 @@ public class ExecutionRequest {
 
     public void setExecPrice(BigDecimal execPrice) {
         this.execPrice = execPrice;
-    }
-
-    public Long getOrderBookId() {
-        return orderBookId;
-    }
-
-    public void setOrderBookId(Long orderBookId) {
-        this.orderBookId = orderBookId;
     }
 
 }

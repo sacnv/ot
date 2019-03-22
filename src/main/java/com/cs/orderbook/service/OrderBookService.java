@@ -98,11 +98,7 @@ public class OrderBookService {
         LOGGER.info("adding order for book id {}", orderBookId);
         OrderBook book = getBookFromOrderBooks(orderBookId);
 
-        if (!OrderBookStatus.OPEN.equals(book.getStatus())) {
-            throw new OTException("Order book for given order id is not open");
-        }
-
-        validateOrder(orderRequest);
+        validateOrder(book, orderRequest);
 
         Order order =
                 new Order(orderRequest.getOrderQty(), orderRequest.getInstrId(),
@@ -126,9 +122,15 @@ public class OrderBookService {
         return Optional.of(orders.get(0));
     }
 
-    private void validateOrder(OrderRequest orderRequest) {
+    private void validateOrder(OrderBook book, OrderRequest orderRequest) {
 
-        if (OrderType.LIMIT.getType().equalsIgnoreCase(
+        if (!OrderBookStatus.OPEN.equals(book.getStatus())) {
+            throw new OTException("Order book for given order id is not open");
+        } else if (!book.getInstrId().equals(orderRequest.getInstrId())) {
+            throw new OTException("Instruction Id " + orderRequest.getInstrId()
+                + ", in order request different from Order "
+                    + "book's instruction id " + book.getInstrId());
+        } else if (OrderType.LIMIT.getType().equalsIgnoreCase(
                 (orderRequest.getType().getType()))
                 && null == orderRequest.getOrderPrice()) {
             throw new OTException("Limit Orders cannot have empty price");
@@ -184,13 +186,14 @@ public class OrderBookService {
 
     }
 
-    public synchronized SimpleResponse addExecution(ExecutionRequest exec) {
+    public synchronized SimpleResponse addExecution(Long orderBookId,
+            ExecutionRequest exec) {
         LOGGER.info("adding execution {}", exec);
-        OrderBook book = getBookFromOrderBooks(exec.getOrderBookId());
+        OrderBook book = getBookFromOrderBooks(orderBookId);
         validateExecRequest(book, exec);
 
         Execution newExec = new Execution(exec.getQuantity(),
-                exec.getExecPrice(), exec.getOrderBookId());
+                exec.getExecPrice());
 
         book.addExecution(newExec);
         updateOrderBook(book, newExec);
@@ -255,8 +258,11 @@ public class OrderBookService {
         if (totalExecQty.compareTo(totalValidDemand) > 0) {
             //Remove added execution to maintain correct state
             book.removeLastExecution();
-            throw new OTException("total execution quantity " + totalExecQty
-                    + " cannot exceed total demand " + totalValidDemand);
+            //adjust execution quantity and execute orders
+            Long reductionQty = totalExecQty - totalValidDemand;
+            LOGGER.info("Execution quantity exceeded by {}", reductionQty);
+            exec.reduceExecQuantity(reductionQty);
+            book.addExecution(exec);
         }
 
         // calculate allocation factor (order quantity / total demand)
@@ -270,10 +276,11 @@ public class OrderBookService {
         book.getOrderList().stream().filter(Order::isValid)
                 .forEach(order -> order.setExecQty(
                         (order.getAllocationFactor()
-                                .multiply(totalExecQty)).longValue()));
+                                .multiply(book.getTotalExecQty()))
+                        .longValue()));
 
-        adjustExecQtyForOrders(book, totalExecQty);
-        executeOrders(book, totalValidDemand, totalExecQty);
+        adjustExecQtyForOrders(book, book.getTotalExecQty());
+        executeOrders(book, totalValidDemand, book.getTotalExecQty());
 
     }
 
@@ -343,8 +350,8 @@ public class OrderBookService {
 
         String json = null;
         ObjectMapper mapper = new ObjectMapper();
-
         ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
+
         try {
             json = ow.writeValueAsString(books);
         } catch (IOException e) {

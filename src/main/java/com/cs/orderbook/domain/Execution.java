@@ -4,7 +4,6 @@ package com.cs.orderbook.domain;
 import java.math.BigDecimal;
 
 import com.cs.orderbook.util.IDGenerator;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 public class Execution {
 
@@ -14,27 +13,21 @@ public class Execution {
 
     private BigDecimal execPrice;
 
-    @JsonBackReference
-    private Long orderBookId;
-
     public Execution() {
     }
 
-    public Execution(Long quantity, BigDecimal execPrice, Long orderBookId) {
+    public Execution(Long quantity, BigDecimal execPrice) {
         super();
         this.id = IDGenerator.generateId(Execution.class);
         this.quantity = quantity;
         this.execPrice = execPrice;
-        this.orderBookId = orderBookId;
     }
 
-    public Execution(Long id, Long quantity, BigDecimal execPrice,
-            Long orderBookId) {
+    public Execution(Long id, Long quantity, BigDecimal execPrice) {
         super();
         this.id = id;
         this.quantity = quantity;
         this.execPrice = execPrice;
-        this.orderBookId = orderBookId;
     }
 
     public Long getId() {
@@ -57,12 +50,8 @@ public class Execution {
         this.execPrice = execPrice;
     }
 
-    public Long getOrderBookId() {
-        return orderBookId;
-    }
-
-    public void setOrderBookId(Long orderBookId) {
-        this.orderBookId = orderBookId;
+    public void reduceExecQuantity(Long quantity) {
+        this.quantity -= quantity;
     }
 
 }

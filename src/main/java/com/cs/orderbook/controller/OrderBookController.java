@@ -133,7 +133,7 @@ public class OrderBookController {
             @PathVariable("orderBookId") Long orderBookId,
             @RequestBody ExecutionRequest exec) {
 
-        SimpleResponse resp = orderBookService.addExecution(exec);
+        SimpleResponse resp = orderBookService.addExecution(orderBookId, exec);
         return new ResponseEntity<>(resp, getReponseHeaders(request, resp),
                 HttpStatus.CREATED);
 
